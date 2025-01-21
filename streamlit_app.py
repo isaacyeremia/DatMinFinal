@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import classification_report, silhouette_score
+from sklearn.decomposition import PCA  # Tambahkan PCA
 
 # Step 1: Load and Clean Data
 def load_stock_data(ticker):
@@ -49,11 +50,9 @@ def plot_correlation_matrix(data_cleaned):
 
 # Step 2: Plotting Functions
 def plot_closing_trend(data_cleaned):
-    # Ensure Date and Close are one-dimensional
-    dates = data_cleaned['Date'].values.flatten()  # Ensure 1D array
-    close_prices = data_cleaned['Close'].values.flatten()  # Ensure 1D array
+    dates = data_cleaned['Date'].values.flatten()
+    close_prices = data_cleaned['Close'].values.flatten()
 
-    # Plot the closing price trend
     plt.figure(figsize=(10, 6))
     sns.lineplot(x=dates, y=close_prices)
     plt.title('Stock Closing Price Over Time')
@@ -73,6 +72,15 @@ def plot_elbow_method(X_scaled):
     plt.title('Elbow Method for Optimal K')
     plt.xlabel('Number of Clusters')
     plt.ylabel('Inertia')
+    st.pyplot(plt)
+
+def plot_pca_variance(pca):
+    st.subheader("PCA Explained Variance Ratio")
+    plt.figure(figsize=(8, 5))
+    plt.bar(range(1, len(pca.explained_variance_ratio_) + 1), pca.explained_variance_ratio_, alpha=0.7)
+    plt.xlabel('Principal Components')
+    plt.ylabel('Explained Variance Ratio')
+    plt.title('PCA Explained Variance')
     st.pyplot(plt)
 
 # Step 3: Main Function
@@ -110,6 +118,13 @@ def main():
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
+    # PCA
+    st.subheader("Dimensionality Reduction with PCA")
+    pca = PCA(n_components=2)  # Ubah ke 2 dimensi
+    X_pca = pca.fit_transform(X_scaled)
+    st.write(f"Explained Variance Ratio: {pca.explained_variance_ratio_}")
+    plot_pca_variance(pca)
+
     # Train-Test Split
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
@@ -132,8 +147,8 @@ def main():
     plot_elbow_method(X_scaled)
 
     kmeans = KMeans(n_clusters=3, random_state=42)
-    kmeans_labels = kmeans.fit_predict(X_scaled)
-    silhouette_avg = silhouette_score(X_scaled, kmeans_labels)
+    kmeans_labels = kmeans.fit_predict(X_pca)  # Clustering dengan data PCA
+    silhouette_avg = silhouette_score(X_pca, kmeans_labels)  # Evaluasi dengan data PCA
     st.write(f"Silhouette Score: {silhouette_avg:.2f}")
 
 # Run the app
